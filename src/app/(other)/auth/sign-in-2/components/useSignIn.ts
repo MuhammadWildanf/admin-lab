@@ -10,6 +10,14 @@ import { useNotificationContext } from '@/context/useNotificationContext'
 import httpClient from '@/helpers/httpClient'
 import type { UserType } from '@/types/auth'
 
+interface LoginResponse {
+  id: number
+  username: string
+  email: string
+  role: string
+  access_token: string
+}
+
 const useSignIn = () => {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
@@ -27,8 +35,8 @@ const useSignIn = () => {
   const { control, handleSubmit } = useForm({
     resolver: yupResolver(loginFormSchema),
     defaultValues: {
-      email: 'test@techzaa.com',
-      password: 'password',
+      email: '',
+      password: '',
     },
   })
 
@@ -42,19 +50,31 @@ const useSignIn = () => {
 
   const login = handleSubmit(async (values: LoginFormFields) => {
     try {
-      const res: AxiosResponse<UserType> = await httpClient.post('/login', values)
-      if (res.data.token) {
-        saveSession({
-          ...(res.data ?? {}),
-          token: res.data.token,
-        })
+      setLoading(true)
+      const res: AxiosResponse<LoginResponse> = await httpClient.post('http://localhost:1987/login', values)
+      if (res.data.access_token) {
+        const userData: UserType = {
+          id: String(res.data.id),
+          username: res.data.username,
+          email: res.data.email,
+          role: res.data.role,
+          token: res.data.access_token,
+          password: '', // Required by UserType but not used after login
+          firstName: res.data.username, // Using username as firstName since it's not in the response
+          lastName: '', // Not provided in the response
+        }
+        
+        localStorage.setItem('_Rasket_AUTH_KEY_', JSON.stringify(userData))
+        saveSession(userData)
+        
         redirectUser()
         showNotification({ message: 'Successfully logged in. Redirecting....', variant: 'success' })
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-      if (e.response?.data?.error) {
-        showNotification({ message: e.response?.data?.error, variant: 'danger' })
+      if (e.response?.data?.message) {
+        showNotification({ message: e.response.data.message, variant: 'danger' })
+      } else {
+        showNotification({ message: 'An error occurred during login', variant: 'danger' })
       }
     } finally {
       setLoading(false)

@@ -9,12 +9,12 @@ const ThirdPartyAuth = () => {
         <Button variant="light" className="shadow-none">
           <IconifyIcon icon="bxl:google" height={20} width={20} />
         </Button>
-        <Button variant="light" className="shadow-none">
+        {/* <Button variant="light" className="shadow-none">
           <IconifyIcon icon="bxl:facebook" height={20} width={20} />
         </Button>
         <Button variant="light" className="shadow-none">
           <IconifyIcon icon="bxl:github" height={20} width={20} />
-        </Button>
+        </Button> */}
       </div>
     </>
   )

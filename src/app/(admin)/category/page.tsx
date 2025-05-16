@@ -27,7 +27,7 @@ export default function CategoryPage() {
         try {
             setLoading(true);
             setError(null);
-            const response = await fetch('http://localhost:1987/category');
+            const response = await fetch('http://localhost:1987/api/category');
             if (!response.ok) throw new Error('Failed to fetch categories');
             const data = await response.json();
             setCategories(data);
@@ -47,7 +47,7 @@ export default function CategoryPage() {
         e.preventDefault();
         try {
             setError(null);
-            const response = await fetch('http://localhost:1987/category', {
+            const response = await fetch('http://localhost:1987/api/category', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ export default function CategoryPage() {
 
         try {
             setError(null);
-            const response = await fetch(`http://localhost:1987/category/${editingCategory.id}`, {
+            const response = await fetch(`http://localhost:1987/api/category/${editingCategory.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ export default function CategoryPage() {
 
         try {
             setError(null);
-            const response = await fetch(`http://localhost:1987/category/${id}`, {
+            const response = await fetch(`http://localhost:1987/api/category/${id}`, {
                 method: 'DELETE',
             });
 

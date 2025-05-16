@@ -19,9 +19,6 @@ const LoginForm = () => {
         id="password-id"
         label={
           <>
-            <Link to="/auth/reset-pass" className="float-end text-muted text-unline-dashed ms-1">
-              Reset password
-            </Link>
             <label className="form-label" htmlFor="example-password">
               Password
             </label>
@@ -29,7 +26,6 @@ const LoginForm = () => {
         }
       />
       <div className="mb-3">
-        <FormCheck label="Remember me" id="sign-in" />
       </div>
       <div className="mb-1 text-center d-grid">
         <Button variant="primary" type="submit" disabled={loading}>
