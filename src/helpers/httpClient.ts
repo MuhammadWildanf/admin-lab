@@ -9,7 +9,7 @@ const instance = axios.create({
 // Add a request interceptor to add the access_token
 instance.interceptors.request.use(
   (config) => {
-    const authData = localStorage.getItem('_Rasket_AUTH_KEY_')
+    const authData = localStorage.getItem('_AUTH_KEY_')
     if (authData) {
       const { token } = JSON.parse(authData)
       config.headers.access_token = token
@@ -18,7 +18,7 @@ instance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error)
-  }
+  },
 )
 
 function HttpClient() {

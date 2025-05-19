@@ -5,7 +5,7 @@ const PageMetaData = ({ title }: { title: string }) => {
   const defaultTitle = DEFAULT_PAGE_TITLE
   return (
     <Helmet>
-      <title>{title ? `${title} | Rasket React- Responsive Admin Dashboard Template` : defaultTitle}</title>
+      <title>{title ? `${title} | Imajiwa Lab- Admin Dashboard` : defaultTitle}</title>
     </Helmet>
   )
 }

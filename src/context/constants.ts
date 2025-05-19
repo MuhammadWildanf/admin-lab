@@ -4,16 +4,16 @@ export const currency: CurrencyType = '$'
 
 export const currentYear = new Date().getFullYear()
 
-export const developedByLink = 'https://techzaa.getappui.com/'
+export const developedByLink = 'https://imajiwa.id/'
 
-export const developedBy = 'Techzaa'
+export const developedBy = 'Imajiwa Lab'
 
-export const contactUs = 'techzaastudio@gmail.com'
+export const contactUs = 'visual.lab@imajiwa.id'
 
 export const buyLink = ''
 
-export const basePath = '/rasket_r/'
+export const basePath = '/imajiwa_lab/'
 
-export const DEFAULT_PAGE_TITLE = 'Rasket React | Responsive Admin Dashboard Template'
+export const DEFAULT_PAGE_TITLE = 'Imajiwa Lab | Admin Dashboard'
 
 export const colorVariants = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'dark', 'light', 'link']

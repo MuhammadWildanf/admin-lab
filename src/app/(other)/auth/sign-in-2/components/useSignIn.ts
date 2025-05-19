@@ -63,10 +63,10 @@ const useSignIn = () => {
           firstName: res.data.username, // Using username as firstName since it's not in the response
           lastName: '', // Not provided in the response
         }
-        
-        localStorage.setItem('_Rasket_AUTH_KEY_', JSON.stringify(userData))
+
+        localStorage.setItem('_AUTH_KEY_', JSON.stringify(userData))
         saveSession(userData)
-        
+
         redirectUser()
         showNotification({ message: 'Successfully logged in. Redirecting....', variant: 'success' })
       }
