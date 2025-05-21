@@ -15,7 +15,6 @@ const Maintenance = lazy(() => import('@/app/(other)/maintenance/page'))
 
 
 // Not Found Routes
-const NotFoundAdmin = lazy(() => import('@/app/(admin)/not-found'))
 const NotFound = lazy(() => import('@/app/(other)/(error-pages)/error-404/page'))
 
 // Auth Routes

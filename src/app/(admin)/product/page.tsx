@@ -62,15 +62,6 @@ interface FormData {
     meta_keywords: string;
 }
 
-interface ApiResponse {
-    success: boolean;
-    data: Product[];
-    pagination?: {
-        total: number;
-        page: number;
-        pages: number;
-    };
-}
 
 export default function ProductPage() {
     const [products, setProducts] = useState<Product[]>([]);

@@ -2,12 +2,10 @@ import { Link } from 'react-router-dom'
 
 import type { LogoBoxProps } from '@/types/component-props'
 
-import logoDark from '@/assets/images/logo-dark.png'
-import logoLight from '@/assets/images/logo-light.png'
-import logoSm from '@/assets/images/logo-sm.png'
+
 import logovslab from '@/assets/images/logo-vislab.png'
 
-const LogoBox = ({ containerClassName, squareLogo, textLogo }: LogoBoxProps) => {
+const LogoBox = ({ containerClassName, textLogo }: LogoBoxProps) => {
   return (
     <div className={containerClassName ?? ''}>
       <Link to="/" className="logo-dark">

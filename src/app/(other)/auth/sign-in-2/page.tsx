@@ -1,5 +1,4 @@
 import { Card, CardBody, Col } from 'react-bootstrap'
-import { Link } from 'react-router-dom'
 
 import LogoBox from '@/components/LogoBox'
 import PageMetaData from '@/components/PageTitle'
