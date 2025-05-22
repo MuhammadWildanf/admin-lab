@@ -64,7 +64,7 @@ interface FormData {
 export default function ProductPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -943,8 +943,8 @@ export default function ProductPage() {
                             {previewThumbnail && (
                                 <div className="mt-2">
                                     <img
-                                        src={editingProduct && !previewThumbnail.startsWith('data:') 
-                                            ? getMediaUrl(previewThumbnail) 
+                                        src={editingProduct && !previewThumbnail.startsWith('data:')
+                                            ? getMediaUrl(previewThumbnail)
                                             : previewThumbnail}
                                         alt="Thumbnail preview"
                                         style={{ width: '100px', height: '100px', objectFit: 'cover' }}
@@ -972,8 +972,8 @@ export default function ProductPage() {
                                 {previewMedia.map((url, index) => (
                                     <div key={index} className="position-relative">
                                         <img
-                                            src={editingProduct && !url.startsWith('data:') 
-                                                ? getMediaUrl(url) 
+                                            src={editingProduct && !url.startsWith('data:')
+                                                ? getMediaUrl(url)
                                                 : url}
                                             alt={`Media ${index + 1}`}
                                             style={{ width: '100px', height: '100px', objectFit: 'cover' }}
