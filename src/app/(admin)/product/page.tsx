@@ -150,9 +150,9 @@ export default function ProductPage() {
         if (files.length === 0) return;
 
         // Filter out files that are already in mediaFiles
-        const newFiles = files.filter(file => 
-            !mediaFiles.some(existingFile => 
-                existingFile.name === file.name && 
+        const newFiles = files.filter(file =>
+            !mediaFiles.some(existingFile =>
+                existingFile.name === file.name &&
                 existingFile.size === file.size
             )
         );
@@ -934,7 +934,7 @@ export default function ProductPage() {
                             <Form.Label>Thumbnail</Form.Label>
                             <Form.Control
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,video/*"
                                 onChange={handleThumbnailChange}
                                 ref={thumbnailInputRef}
                                 required={!editingProduct}
@@ -955,7 +955,7 @@ export default function ProductPage() {
                             <Form.Label>Upload Multiple Images</Form.Label>
                             <Form.Control
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,video/*"
                                 multiple
                                 onChange={handleMediaChange}
                                 ref={mediaInputRef}
