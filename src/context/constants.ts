@@ -12,7 +12,7 @@ export const contactUs = 'visual.lab@imajiwa.id'
 
 export const buyLink = ''
 
-export const basePath = '/imajiwa_lab/'
+export const basePath = '/'
 
 export const DEFAULT_PAGE_TITLE = 'Imajiwa Lab | Admin Dashboard'
 

@@ -40,15 +40,6 @@
 
   <body>
     <div id="root"></div>
-    <div id="splash-screen">
-      <img alt="Logo" class="light" src="/logo-dark-full.png" style="height: 10%" />
-    </div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      const rootEl = document.querySelector('#root')
-      new MutationObserver(() => {
-        document.querySelector('#splash-screen')?.classList.add('remove')
-      }).observe(rootEl, { childList: true })
-    </script>
   </body>
 </html>
