@@ -20,8 +20,9 @@ export default defineConfig({
       },
       output: {
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'style.css') return 'assets/css/[name][extname]'
-          if (/\.(png|jpe?g|gif|svg|ico)$/.test(assetInfo.name)) {
+          const info = assetInfo.name as string
+          if (info === 'style.css') return 'assets/css/[name][extname]'
+          if (/\.(png|jpe?g|gif|svg|ico)$/.test(info)) {
             return 'assets/images/[name][extname]'
           }
           return 'assets/[name][extname]'
