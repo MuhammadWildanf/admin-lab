@@ -9,6 +9,7 @@ import { useAuthContext } from '@/context/useAuthContext'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import httpClient from '@/helpers/httpClient'
 import type { UserType } from '@/types/auth'
+import { getAuthUrl } from '@/config/api'
 
 interface LoginResponse {
   id: number
@@ -51,7 +52,7 @@ const useSignIn = () => {
   const login = handleSubmit(async (values: LoginFormFields) => {
     try {
       setLoading(true)
-      const res: AxiosResponse<LoginResponse> = await httpClient.post('http://localhost:1987/login', values)
+      const res: AxiosResponse<LoginResponse> = await httpClient.post(getAuthUrl('/login'), values)
       if (res.data.access_token) {
         const userData: UserType = {
           id: String(res.data.id),

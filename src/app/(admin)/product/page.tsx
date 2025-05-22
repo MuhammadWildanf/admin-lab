@@ -6,9 +6,7 @@ import ReactTable from '@/components/Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ReactTableProps } from '@/types/component-props';
 import httpClient from '@/helpers/httpClient';
-
-const API_BASE_URL = 'http://localhost:1987/api';
-const IMAGE_BASE_URL = 'http://localhost:1987';
+import { getApiUrl, getMediaUrl } from '@/config/api';
 
 interface Category {
     id: number;
@@ -108,7 +106,7 @@ export default function ProductPage() {
                 ...(selectedFeatured && { is_featured: selectedFeatured }),
             });
 
-            const response = await httpClient.get(`${API_BASE_URL}/products?${queryParams}`);
+            const response = await httpClient.get(getApiUrl(`/products?${queryParams}`));
             setProducts(response.data.data);
         } catch (error) {
             console.error('Failed to fetch products:', error);
@@ -120,7 +118,7 @@ export default function ProductPage() {
 
     const fetchCategories = async () => {
         try {
-            const response = await httpClient.get(`${API_BASE_URL}/category`);
+            const response = await httpClient.get(getApiUrl('/category'));
             setCategories(response.data);
         } catch (error) {
             console.error('Failed to fetch categories:', error);
@@ -216,7 +214,7 @@ export default function ProductPage() {
                 formDataToSend.append('media', file);
             });
 
-            const response = await httpClient.post(`${API_BASE_URL}/products`, formDataToSend, {
+            const response = await httpClient.post(getApiUrl('/products'), formDataToSend, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -279,7 +277,7 @@ export default function ProductPage() {
                 formDataToSend.append('media', file);
             });
 
-            const response = await httpClient.put(`${API_BASE_URL}/products/${editingProduct.id}`, formDataToSend, {
+            const response = await httpClient.put(getApiUrl(`/products/${editingProduct.id}`), formDataToSend, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -325,12 +323,42 @@ export default function ProductPage() {
         if (!confirm('Are you sure you want to delete this product?')) return;
 
         try {
-            await httpClient.delete(`${API_BASE_URL}/products/${id}`);
+            await httpClient.delete(getApiUrl(`/products/${id}`));
             fetchProducts();
         } catch (error) {
             console.error('Failed to delete product:', error);
             setError(error instanceof Error ? error.message : 'Failed to delete product');
         }
+    };
+
+    const handleEdit = (product: Product) => {
+        setEditingProduct(product);
+        // Convert specifications and requirements objects to arrays
+        const specsArray = Object.entries(product.specifications || {}).map(([key, value]) => ({
+            key,
+            value: String(value)
+        }));
+        const reqsArray = Object.entries(product.requirements || {}).map(([key, value]) => ({
+            key,
+            value: String(value)
+        }));
+        setFormData({
+            name: product.name,
+            category_id: product.category_id.toString(),
+            description: product.description,
+            specifications: specsArray,
+            requirements: reqsArray,
+            price: product.price,
+            is_featured: product.is_featured,
+            status: product.status,
+            meta_title: product.meta_title,
+            meta_description: product.meta_description,
+            meta_keywords: product.meta_keywords,
+        });
+        // Set preview URLs
+        setPreviewThumbnail(product.thumbnail_url);
+        setPreviewMedia(product.media?.map(m => m.url) || []);
+        setShowModal(true);
     };
 
     const columns: ColumnDef<Product>[] = [
@@ -377,7 +405,7 @@ export default function ProductPage() {
             header: 'Thumbnail',
             cell: ({ row }) => (
                 <img
-                    src={`${IMAGE_BASE_URL}${row.original.thumbnail_url}`}
+                    src={row.original.thumbnail_url.startsWith('http') ? row.original.thumbnail_url : getMediaUrl(row.original.thumbnail_url)}
                     alt={row.original.name}
                     style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                 />
@@ -401,34 +429,7 @@ export default function ProductPage() {
                     <Button
                         variant="outline-primary"
                         size="sm"
-                        onClick={() => {
-                            setEditingProduct(row.original);
-                            // Convert specifications and requirements objects to arrays
-                            const specsArray = Object.entries(row.original.specifications || {}).map(([key, value]) => ({
-                                key,
-                                value: String(value)
-                            }));
-                            const reqsArray = Object.entries(row.original.requirements || {}).map(([key, value]) => ({
-                                key,
-                                value: String(value)
-                            }));
-                            setFormData({
-                                name: row.original.name,
-                                category_id: row.original.category_id.toString(),
-                                description: row.original.description,
-                                specifications: specsArray,
-                                requirements: reqsArray,
-                                price: row.original.price,
-                                is_featured: row.original.is_featured,
-                                status: row.original.status,
-                                meta_title: row.original.meta_title,
-                                meta_description: row.original.meta_description,
-                                meta_keywords: row.original.meta_keywords,
-                            });
-                            setPreviewThumbnail(row.original.thumbnail_url);
-                            setPreviewMedia(row.original.media?.map(m => m.url) || []);
-                            setShowModal(true);
-                        }}
+                        onClick={() => handleEdit(row.original)}
                     >
                         Edit
                     </Button>
@@ -621,7 +622,7 @@ export default function ProductPage() {
                                         {selectedProduct.media?.map((media, index) => (
                                             <img
                                                 key={media.id}
-                                                src={`${IMAGE_BASE_URL}${media.url}`}
+                                                src={media.url.startsWith('http') ? media.url : getMediaUrl(media.url)}
                                                 alt={`Media ${index + 1}`}
                                                 style={{ width: '100px', height: '100px', objectFit: 'cover' }}
                                             />
@@ -942,7 +943,9 @@ export default function ProductPage() {
                             {previewThumbnail && (
                                 <div className="mt-2">
                                     <img
-                                        src={editingProduct ? `${IMAGE_BASE_URL}${previewThumbnail}` : previewThumbnail}
+                                        src={editingProduct && !previewThumbnail.startsWith('data:') 
+                                            ? getMediaUrl(previewThumbnail) 
+                                            : previewThumbnail}
                                         alt="Thumbnail preview"
                                         style={{ width: '100px', height: '100px', objectFit: 'cover' }}
                                     />
@@ -969,7 +972,9 @@ export default function ProductPage() {
                                 {previewMedia.map((url, index) => (
                                     <div key={index} className="position-relative">
                                         <img
-                                            src={editingProduct && !url.startsWith('data:') ? `${IMAGE_BASE_URL}${url}` : url}
+                                            src={editingProduct && !url.startsWith('data:') 
+                                                ? getMediaUrl(url) 
+                                                : url}
                                             alt={`Media ${index + 1}`}
                                             style={{ width: '100px', height: '100px', objectFit: 'cover' }}
                                             className="rounded"
@@ -994,8 +999,8 @@ export default function ProductPage() {
                         }}>
                             Cancel
                         </Button>
-                        <Button variant="primary" type="submit" disabled={loading}>
-                            {loading ? 'Processing...' : (editingProduct ? 'Update' : 'Create')}
+                        <Button variant="primary" type="submit">
+                            {editingProduct ? 'Update' : 'Create'}
                         </Button>
                     </Modal.Footer>
                 </Form>

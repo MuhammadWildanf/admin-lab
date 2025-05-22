@@ -5,6 +5,7 @@ import { Button, Modal, Form, Alert, Spinner } from 'react-bootstrap';
 import ReactTable from '@/components/Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ReactTableProps } from '@/types/component-props';
+import { getApiUrl } from '@/config/api';
 
 interface Category {
     id: number;
@@ -27,7 +28,7 @@ export default function CategoryPage() {
         try {
             setLoading(true);
             setError(null);
-            const response = await fetch('http://localhost:1987/api/category');
+            const response = await fetch(getApiUrl('/category'));
             if (!response.ok) throw new Error('Failed to fetch categories');
             const data = await response.json();
             setCategories(data);
@@ -47,7 +48,7 @@ export default function CategoryPage() {
         e.preventDefault();
         try {
             setError(null);
-            const response = await fetch('http://localhost:1987/api/category', {
+            const response = await fetch(getApiUrl('/category'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ export default function CategoryPage() {
 
         try {
             setError(null);
-            const response = await fetch(`http://localhost:1987/api/category/${editingCategory.id}`, {
+            const response = await fetch(getApiUrl(`/category/${editingCategory.id}`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ export default function CategoryPage() {
 
         try {
             setError(null);
-            const response = await fetch(`http://localhost:1987/api/category/${id}`, {
+            const response = await fetch(getApiUrl(`/category/${id}`), {
                 method: 'DELETE',
             });
 
