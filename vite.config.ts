@@ -20,6 +20,10 @@ export default defineConfig({
           vendor: ['react', 'react-dom', 'react-router-dom'],
           // Add other large dependencies here
         },
+        format: 'es',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       },
     },
     chunkSizeWarningLimit: 1000,
