@@ -4,7 +4,6 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/',
   plugins: [react()],
   resolve: {
     alias: {
@@ -14,18 +13,23 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    sourcemap: true,
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+      },
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          // Add other large dependencies here
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === 'style.css') return 'assets/css/[name][extname]'
+          if (/\.(png|jpe?g|gif|svg|ico)$/.test(assetInfo.name)) {
+            return 'assets/images/[name][extname]'
+          }
+          return 'assets/[name][extname]'
         },
-        format: 'es',
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
       },
     },
-    chunkSizeWarningLimit: 1000,
   },
+  publicDir: 'src/assets',
 })
