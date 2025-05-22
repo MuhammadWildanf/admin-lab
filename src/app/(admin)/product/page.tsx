@@ -64,7 +64,7 @@ interface FormData {
 export default function ProductPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -470,8 +470,9 @@ export default function ProductPage() {
                         resetForm();
                         setShowModal(true);
                     }}
+                    disabled={loading}
                 >
-                    Add Product
+                    {loading ? 'Loading...' : 'Add Product'}
                 </Button>
             </div>
 
@@ -487,6 +488,7 @@ export default function ProductPage() {
                                     placeholder="Search products..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
+                                    disabled={loading}
                                 />
                             </Form.Group>
                         </Col>
@@ -496,6 +498,7 @@ export default function ProductPage() {
                                 <Form.Select
                                     value={selectedCategory}
                                     onChange={(e) => setSelectedCategory(e.target.value)}
+                                    disabled={loading}
                                 >
                                     <option value="">All Categories</option>
                                     {categories.map((category) => (
@@ -512,6 +515,7 @@ export default function ProductPage() {
                                 <Form.Select
                                     value={selectedStatus}
                                     onChange={(e) => setSelectedStatus(e.target.value)}
+                                    disabled={loading}
                                 >
                                     <option value="">All Status</option>
                                     <option value="draft">Draft</option>
@@ -525,6 +529,7 @@ export default function ProductPage() {
                                 <Form.Select
                                     value={selectedFeatured}
                                     onChange={(e) => setSelectedFeatured(e.target.value)}
+                                    disabled={loading}
                                 >
                                     <option value="">All</option>
                                     <option value="true">Yes</option>
@@ -536,7 +541,16 @@ export default function ProductPage() {
                 </div>
             </div>
 
-            <ReactTable {...tableProps} />
+            {loading ? (
+                <div className="text-center p-5">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p className="mt-2">Loading products...</p>
+                </div>
+            ) : (
+                <ReactTable {...tableProps} />
+            )}
 
             {/* Detail Modal */}
             <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg">
@@ -678,7 +692,7 @@ export default function ProductPage() {
                     )}
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                    <Button variant="secondary" onClick={() => setShowDetailModal(false)} disabled={loading}>
                         Close
                     </Button>
                 </Modal.Footer>
@@ -996,11 +1010,11 @@ export default function ProductPage() {
                         <Button variant="secondary" onClick={() => {
                             setShowModal(false);
                             resetForm();
-                        }}>
+                        }} disabled={loading}>
                             Cancel
                         </Button>
-                        <Button variant="primary" type="submit">
-                            {editingProduct ? 'Update' : 'Create'}
+                        <Button variant="primary" type="submit" disabled={loading}>
+                            {loading ? 'Loading...' : (editingProduct ? 'Update' : 'Create')}
                         </Button>
                     </Modal.Footer>
                 </Form>
