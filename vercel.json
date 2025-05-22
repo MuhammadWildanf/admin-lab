@@ -4,11 +4,11 @@
   "framework": "vite",
   "installCommand": "npm install --legacy-peer-deps",
   "rewrites": [
-    { "source": "/imajiwa_lab/(.*)", "destination": "/imajiwa_lab/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
     {
-      "source": "/imajiwa_lab/assets/(.*)",
+      "source": "/assets/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
