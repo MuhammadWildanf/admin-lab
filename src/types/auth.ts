@@ -7,4 +7,5 @@ export type UserType = {
   lastName: string
   role: string
   token: string
+  profile?: string | null
 }

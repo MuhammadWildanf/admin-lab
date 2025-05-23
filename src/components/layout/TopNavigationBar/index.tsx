@@ -1,14 +1,14 @@
 import { lazy } from 'react'
-import { Suspense } from 'react'
+// import { Suspense } from 'react'
 
 import LeftSideBarToggle from './components/LeftSideBarToggle'
 import ProfileDropdown from './components/ProfileDropdown'
-import SearchBox from './components/SearchBox'
+// import SearchBox from './components/SearchBox'
 import ThemeCustomizerToggle from './components/ThemeCustomizerToggle'
 import ThemeModeToggle from './components/ThemeModeToggle'
-import FullScreenToggler from './components/FullScreenToggler'
+// import FullScreenToggler from './components/FullScreenToggler'
 
-const Notifications = lazy(() => import('./components/Notifications'))
+// const Notifications = lazy(() => import('./components/Notifications'))
 
 const TopNavigationBar = () => {
   return (
@@ -18,21 +18,21 @@ const TopNavigationBar = () => {
           <div className="d-flex align-items-center gap-2">
             <LeftSideBarToggle />
 
-            <SearchBox />
+            {/* <SearchBox /> */}
           </div>
           <div className="d-flex align-items-center gap-1">
             {/* Toggle Theme Mode */}
             <ThemeModeToggle />
 
             {/* Apps Dropdown */}
-            <Suspense>
+            {/*  <Suspense>
               <FullScreenToggler />
-            </Suspense>
+            </Suspense> */}
 
             {/* Notification Dropdown */}
-            <Suspense>
+            {/* <Suspense>
               <Notifications />
-            </Suspense>
+            </Suspense> */}
 
             {/* Toggle for Theme Customizer */}
             <ThemeCustomizerToggle />
