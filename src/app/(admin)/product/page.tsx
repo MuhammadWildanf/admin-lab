@@ -180,12 +180,16 @@ export default function ProductPage() {
         try {
             // Convert specifications and requirements arrays to objects
             const specificationsObj = formData.specifications.reduce((acc, spec) => {
-                acc[spec.key] = spec.value;
+                if (spec.key && spec.value) {
+                    acc[spec.key] = spec.value;
+                }
                 return acc;
             }, {} as Record<string, string>);
 
             const requirementsObj = formData.requirements.reduce((acc, req) => {
-                acc[req.key] = req.value;
+                if (req.key && req.value) {
+                    acc[req.key] = req.value;
+                }
                 return acc;
             }, {} as Record<string, string>);
 
@@ -241,16 +245,23 @@ export default function ProductPage() {
         setLoading(true);
 
         try {
-            // Convert specifications and requirements arrays to objects
+            // Convert all specifications and requirements in the form to objects
             const specificationsObj = formData.specifications.reduce((acc, spec) => {
-                acc[spec.key] = spec.value;
+                if (spec.key && spec.value) {
+                    acc[spec.key] = spec.value;
+                }
                 return acc;
             }, {} as Record<string, string>);
 
             const requirementsObj = formData.requirements.reduce((acc, req) => {
-                acc[req.key] = req.value;
+                if (req.key && req.value) {
+                    acc[req.key] = req.value;
+                }
                 return acc;
             }, {} as Record<string, string>);
+
+            console.log('Form specifications:', formData.specifications);
+            console.log('Converted specifications:', specificationsObj);
 
             const productData = {
                 name: formData.name,
@@ -333,15 +344,41 @@ export default function ProductPage() {
 
     const handleEdit = (product: Product) => {
         setEditingProduct(product);
+        // Parse specifications and requirements if they are strings
+        let specsObj = product.specifications;
+        let reqsObj = product.requirements;
+
+        // If specifications is a string, try to parse it
+        if (typeof product.specifications === 'string') {
+            try {
+                specsObj = JSON.parse(product.specifications);
+            } catch (e) {
+                specsObj = {};
+            }
+        }
+
+        // If requirements is a string, try to parse it
+        if (typeof product.requirements === 'string') {
+            try {
+                reqsObj = JSON.parse(product.requirements);
+            } catch (e) {
+                reqsObj = {};
+            }
+        }
+
         // Convert specifications and requirements objects to arrays
-        const specsArray = Object.entries(product.specifications || {}).map(([key, value]) => ({
+        const specsArray = Object.entries(specsObj || {}).map(([key, value]) => ({
             key,
             value: String(value)
         }));
-        const reqsArray = Object.entries(product.requirements || {}).map(([key, value]) => ({
+        const reqsArray = Object.entries(reqsObj || {}).map(([key, value]) => ({
             key,
             value: String(value)
         }));
+
+        console.log('Editing product specs:', specsObj);
+        console.log('Converted to array:', specsArray);
+
         setFormData({
             name: product.name,
             category_id: product.category_id.toString(),
@@ -558,141 +595,267 @@ export default function ProductPage() {
                     <Modal.Title>Product Details</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    {selectedProduct && (
-                        <div>
-                            <div className="row mb-4">
-                                <div className="col-md-6">
-                                    <h5>Basic Information</h5>
-                                    <table className="table">
-                                        <tbody>
-                                            <tr>
-                                                <th>Name</th>
-                                                <td>{selectedProduct.name}</td>
-                                            </tr>
-                                            <tr>
-                                                <th>Category</th>
-                                                <td>{selectedProduct.category?.name}</td>
-                                            </tr>
-                                            <tr>
-                                                <th>Price</th>
-                                                <td>
-                                                    {new Intl.NumberFormat('id-ID', {
-                                                        style: 'currency',
-                                                        currency: 'IDR'
-                                                    }).format(parseFloat(selectedProduct.price))}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th>Status</th>
-                                                <td>
-                                                    <span className={`badge bg-${selectedProduct.status === 'published' ? 'success' : 'warning'}`}>
-                                                        {selectedProduct.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th>Featured</th>
-                                                <td>
-                                                    <span className={`badge bg-${selectedProduct.is_featured ? 'primary' : 'secondary'}`}>
-                                                        {selectedProduct.is_featured ? 'Yes' : 'No'}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div className="col-md-6">
-                                    <h5>SEO Information</h5>
-                                    <table className="table">
-                                        <tbody>
-                                            <tr>
-                                                <th>Meta Title</th>
-                                                <td>{selectedProduct.meta_title}</td>
-                                            </tr>
-                                            <tr>
-                                                <th>Meta Description</th>
-                                                <td>{selectedProduct.meta_description}</td>
-                                            </tr>
-                                            <tr>
-                                                <th>Meta Keywords</th>
-                                                <td>{selectedProduct.meta_keywords}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+                    {loading ? (
+                        <div className="text-center p-5">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
                             </div>
-
+                            <p className="mt-2">Loading product details...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="alert alert-danger" role="alert">
+                            {error}
+                        </div>
+                    ) : selectedProduct ? (
+                        <div className="product-detail">
+                            {/* Thumbnail Section */}
                             <div className="row mb-4">
                                 <div className="col-12">
-                                    <h5>Description</h5>
-                                    <p>{selectedProduct.description}</p>
-                                </div>
-                            </div>
-
-                            <div className="row mb-4">
-                                <div className="col-12">
-                                    <h5>Media</h5>
-                                    <div className="d-flex flex-wrap gap-2">
-                                        {selectedProduct.media?.map((media, index) => (
-                                            <img
-                                                key={media.id}
-                                                src={media.url.startsWith('http') ? media.url : getMediaUrl(media.url)}
-                                                alt={`Media ${index + 1}`}
-                                                style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-                                            />
-                                        ))}
+                                    <div className="text-center">
+                                        <img
+                                            src={selectedProduct.thumbnail_url.startsWith('http')
+                                                ? selectedProduct.thumbnail_url
+                                                : getMediaUrl(selectedProduct.thumbnail_url)}
+                                            alt={selectedProduct.name}
+                                            className="img-fluid rounded"
+                                            style={{ maxHeight: '300px', objectFit: 'contain' }}
+                                        />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="row">
-                                <div className="col-12">
-                                    <h5>Specifications</h5>
-                                    <table className="table">
-                                        <thead>
-                                            <tr>
-                                                <th>Key</th>
-                                                <th>Value</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {Object.entries(selectedProduct.specifications).map(([key, value]) => (
-                                                <tr key={key}>
-                                                    <td>{key}</td>
-                                                    <td>{value}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                            {/* Basic Information */}
+                            <div className="row mb-4">
+                                <div className="col-md-6">
+                                    <div className="card h-100">
+                                        <div className="card-header">
+                                            <h5 className="mb-0">Basic Information</h5>
+                                        </div>
+                                        <div className="card-body">
+                                            <table className="table table-borderless">
+                                                <tbody>
+                                                    <tr>
+                                                        <th style={{ width: '30%' }}>Name</th>
+                                                        <td>{selectedProduct.name}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Category</th>
+                                                        <td>{selectedProduct.category?.name || 'N/A'}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Price</th>
+                                                        <td>
+                                                            {new Intl.NumberFormat('id-ID', {
+                                                                style: 'currency',
+                                                                currency: 'IDR'
+                                                            }).format(parseFloat(selectedProduct.price))}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Status</th>
+                                                        <td>
+                                                            <span className={`badge bg-${selectedProduct.status === 'published' ? 'success' : 'warning'}`}>
+                                                                {selectedProduct.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Featured</th>
+                                                        <td>
+                                                            <span className={`badge bg-${selectedProduct.is_featured ? 'primary' : 'secondary'}`}>
+                                                                {selectedProduct.is_featured ? 'Yes' : 'No'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6">
+                                    <div className="card h-100">
+                                        <div className="card-header">
+                                            <h5 className="mb-0">SEO Information</h5>
+                                        </div>
+                                        <div className="card-body">
+                                            <table className="table table-borderless">
+                                                <tbody>
+                                                    <tr>
+                                                        <th style={{ width: '30%' }}>Meta Title</th>
+                                                        <td>{selectedProduct.meta_title || 'N/A'}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Meta Description</th>
+                                                        <td>{selectedProduct.meta_description || 'N/A'}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Meta Keywords</th>
+                                                        <td>{selectedProduct.meta_keywords || 'N/A'}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="row">
+                            {/* Description */}
+                            <div className="row mb-4">
                                 <div className="col-12">
-                                    <h5>Requirements</h5>
-                                    <table className="table">
-                                        <thead>
-                                            <tr>
-                                                <th>Key</th>
-                                                <th>Value</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {Object.entries(selectedProduct.requirements).map(([key, value]) => (
-                                                <tr key={key}>
-                                                    <td>{key}</td>
-                                                    <td>{value}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <div className="card">
+                                        <div className="card-header">
+                                            <h5 className="mb-0">Description</h5>
+                                        </div>
+                                        <div className="card-body">
+                                            <p className="mb-0">{selectedProduct.description || 'No description available'}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* Media Gallery */}
+                            {selectedProduct.media && selectedProduct.media.length > 0 && (
+                                <div className="row mb-4">
+                                    <div className="col-12">
+                                        <div className="card">
+                                            <div className="card-header">
+                                                <h5 className="mb-0">Media Gallery</h5>
+                                            </div>
+                                            <div className="card-body">
+                                                <div className="row g-3">
+                                                    {selectedProduct.media.map((media, index) => (
+                                                        <div key={media.id} className="col-md-3 col-sm-4 col-6">
+                                                            <div className="position-relative">
+                                                                <img
+                                                                    src={media.url.startsWith('http') ? media.url : getMediaUrl(media.url)}
+                                                                    alt={`Media ${index + 1}`}
+                                                                    className="img-fluid rounded"
+                                                                    style={{ width: '100%', height: '150px', objectFit: 'cover' }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Specifications */}
+                            {selectedProduct && selectedProduct.specifications && (
+                                <div className="row mb-4">
+                                    <div className="col-12">
+                                        <div className="card">
+                                            <div className="card-header">
+                                                <h5 className="mb-0">Specifications</h5>
+                                            </div>
+                                            <div className="card-body">
+                                                {(() => {
+                                                    let specsObj = selectedProduct.specifications;
+                                                    if (typeof specsObj === 'string') {
+                                                        try {
+                                                            specsObj = JSON.parse(specsObj);
+                                                        } catch (e) {
+                                                            specsObj = {};
+                                                        }
+                                                    }
+
+                                                    const specs = Object.entries(specsObj || {})
+                                                        .filter(([_, value]) => value !== null && value !== undefined && value !== '');
+
+                                                    if (specs.length === 0) {
+                                                        return <div className="text-muted">No specifications available.</div>;
+                                                    }
+
+                                                    return (
+                                                        <div className="table-responsive">
+                                                            <table className="table table-striped">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th style={{ width: '30%' }}>Key</th>
+                                                                        <th>Value</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {specs.map(([key, value]) => (
+                                                                        <tr key={key}>
+                                                                            <td>{key}</td>
+                                                                            <td>{value}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Requirements */}
+                            {selectedProduct && selectedProduct.requirements && (
+                                <div className="row">
+                                    <div className="col-12">
+                                        <div className="card">
+                                            <div className="card-header">
+                                                <h5 className="mb-0">Requirements</h5>
+                                            </div>
+                                            <div className="card-body">
+                                                {(() => {
+                                                    let reqsObj = selectedProduct.requirements;
+                                                    if (typeof reqsObj === 'string') {
+                                                        try {
+                                                            reqsObj = JSON.parse(reqsObj);
+                                                        } catch (e) {
+                                                            reqsObj = {};
+                                                        }
+                                                    }
+
+                                                    const reqs = Object.entries(reqsObj || {})
+                                                        .filter(([_, value]) => value !== null && value !== undefined && value !== '');
+
+                                                    if (reqs.length === 0) {
+                                                        return <div className="text-muted">No requirements available.</div>;
+                                                    }
+
+                                                    return (
+                                                        <div className="table-responsive">
+                                                            <table className="table table-striped">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th style={{ width: '30%' }}>Key</th>
+                                                                        <th>Value</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {reqs.map(([key, value]) => (
+                                                                        <tr key={key}>
+                                                                            <td>{key}</td>
+                                                                            <td>{value}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="alert alert-warning" role="alert">
+                            No product data available.
                         </div>
                     )}
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowDetailModal(false)} disabled={loading}>
+                    <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
                         Close
                     </Button>
                 </Modal.Footer>
