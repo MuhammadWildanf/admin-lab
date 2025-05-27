@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://api.imajiwa.id',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:1987',
   API_PATH: '/api',
 }
 

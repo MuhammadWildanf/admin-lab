@@ -19,6 +19,7 @@ interface Media {
     id: number;
     url: string;
     sort_order: number;
+    type?: string;
 }
 
 interface Specification {
@@ -86,7 +87,7 @@ export default function ProductPage() {
     const [thumbnail, setThumbnail] = useState<File | null>(null);
     const [mediaFiles, setMediaFiles] = useState<File[]>([]);
     const [previewThumbnail, setPreviewThumbnail] = useState<string>('');
-    const [previewMedia, setPreviewMedia] = useState<string[]>([]);
+    const [previewMedia, setPreviewMedia] = useState<Array<{ url: string; type: string }>>([]);
     const thumbnailInputRef = useRef<HTMLInputElement>(null);
     const mediaInputRef = useRef<HTMLInputElement>(null);
 
@@ -161,7 +162,10 @@ export default function ProductPage() {
         newFiles.forEach(file => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setPreviewMedia(prev => [...prev, reader.result as string]);
+                setPreviewMedia(prev => [...prev, {
+                    url: reader.result as string,
+                    type: file.type.startsWith('video/') ? 'video' : 'image'
+                }]);
             };
             reader.readAsDataURL(file);
         });
@@ -174,21 +178,26 @@ export default function ProductPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateSpecificationsAndRequirements()) return;
         setError(null);
         setLoading(true);
 
         try {
             // Convert specifications and requirements arrays to objects
-            const specificationsObj = formData.specifications.reduce((acc, spec) => {
+            const specificationsObj = formData.specifications.reduce((acc, spec, index) => {
                 if (spec.key && spec.value) {
-                    acc[spec.key] = spec.value;
+                    // Add index to key to ensure uniqueness
+                    const uniqueKey = `${spec.key}_${index}`;
+                    acc[uniqueKey] = spec.value;
                 }
                 return acc;
             }, {} as Record<string, string>);
 
-            const requirementsObj = formData.requirements.reduce((acc, req) => {
+            const requirementsObj = formData.requirements.reduce((acc, req, index) => {
                 if (req.key && req.value) {
-                    acc[req.key] = req.value;
+                    // Add index to key to ensure uniqueness
+                    const uniqueKey = `${req.key}_${index}`;
+                    acc[uniqueKey] = req.value;
                 }
                 return acc;
             }, {} as Record<string, string>);
@@ -224,11 +233,13 @@ export default function ProductPage() {
                 },
             });
 
-            console.log('Create product response:', response.data);
-
-            setShowModal(false);
-            resetForm();
-            fetchProducts();
+            if (response.data.success) {
+                setShowModal(false);
+                resetForm();
+                fetchProducts();
+            } else {
+                setError(response.data.message || 'Failed to create product');
+            }
         } catch (error) {
             console.error('Failed to create product:', error);
             setError(error instanceof Error ? error.message : 'Failed to create product');
@@ -239,29 +250,31 @@ export default function ProductPage() {
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateSpecificationsAndRequirements()) return;
         if (!editingProduct) return;
 
         setError(null);
         setLoading(true);
 
         try {
-            // Convert all specifications and requirements in the form to objects
-            const specificationsObj = formData.specifications.reduce((acc, spec) => {
+            // Convert specifications and requirements arrays to objects
+            const specificationsObj = formData.specifications.reduce((acc, spec, index) => {
                 if (spec.key && spec.value) {
-                    acc[spec.key] = spec.value;
+                    // Add index to key to ensure uniqueness
+                    const uniqueKey = `${spec.key}_${index}`;
+                    acc[uniqueKey] = spec.value;
                 }
                 return acc;
             }, {} as Record<string, string>);
 
-            const requirementsObj = formData.requirements.reduce((acc, req) => {
+            const requirementsObj = formData.requirements.reduce((acc, req, index) => {
                 if (req.key && req.value) {
-                    acc[req.key] = req.value;
+                    // Add index to key to ensure uniqueness
+                    const uniqueKey = `${req.key}_${index}`;
+                    acc[uniqueKey] = req.value;
                 }
                 return acc;
             }, {} as Record<string, string>);
-
-            console.log('Form specifications:', formData.specifications);
-            console.log('Converted specifications:', specificationsObj);
 
             const productData = {
                 name: formData.name,
@@ -280,13 +293,17 @@ export default function ProductPage() {
             const formDataToSend = new FormData();
             formDataToSend.append('data', JSON.stringify(productData));
 
+            // Only append thumbnail if a new one is selected
             if (thumbnail) {
                 formDataToSend.append('thumbnail', thumbnail);
             }
 
-            mediaFiles.forEach((file) => {
-                formDataToSend.append('media', file);
-            });
+            // Only append media if new files are selected
+            if (mediaFiles.length > 0) {
+                mediaFiles.forEach((file) => {
+                    formDataToSend.append('media', file);
+                });
+            }
 
             const response = await httpClient.put(getApiUrl(`/products/${editingProduct.id}`), formDataToSend, {
                 headers: {
@@ -294,11 +311,13 @@ export default function ProductPage() {
                 },
             });
 
-            console.log('Update product response:', response.data);
-
-            setShowModal(false);
-            resetForm();
-            fetchProducts();
+            if (response.data.success) {
+                setShowModal(false);
+                resetForm();
+                fetchProducts();
+            } else {
+                setError(response.data.message || 'Failed to update product');
+            }
         } catch (error) {
             console.error('Failed to update product:', error);
             setError(error instanceof Error ? error.message : 'Failed to update product');
@@ -344,40 +363,47 @@ export default function ProductPage() {
 
     const handleEdit = (product: Product) => {
         setEditingProduct(product);
-        // Parse specifications and requirements if they are strings
+
+        // Parse specifications and requirements
         let specsObj = product.specifications;
         let reqsObj = product.requirements;
 
-        // If specifications is a string, try to parse it
-        if (typeof product.specifications === 'string') {
+        // Handle if specifications is a string
+        if (typeof specsObj === 'string') {
             try {
-                specsObj = JSON.parse(product.specifications);
+                specsObj = JSON.parse(specsObj);
             } catch (e) {
                 specsObj = {};
             }
         }
 
-        // If requirements is a string, try to parse it
-        if (typeof product.requirements === 'string') {
+        // Handle if requirements is a string
+        if (typeof reqsObj === 'string') {
             try {
-                reqsObj = JSON.parse(product.requirements);
+                reqsObj = JSON.parse(reqsObj);
             } catch (e) {
                 reqsObj = {};
             }
         }
 
         // Convert specifications and requirements objects to arrays
-        const specsArray = Object.entries(specsObj || {}).map(([key, value]) => ({
-            key,
-            value: String(value)
-        }));
-        const reqsArray = Object.entries(reqsObj || {}).map(([key, value]) => ({
-            key,
-            value: String(value)
-        }));
+        const specsArray = Object.entries(specsObj || {}).map(([key, value]) => {
+            // Remove the index from the key
+            const cleanKey = key.split('_').slice(0, -1).join('_');
+            return {
+                key: cleanKey,
+                value: String(value)
+            };
+        });
 
-        console.log('Editing product specs:', specsObj);
-        console.log('Converted to array:', specsArray);
+        const reqsArray = Object.entries(reqsObj || {}).map(([key, value]) => {
+            // Remove the index from the key
+            const cleanKey = key.split('_').slice(0, -1).join('_');
+            return {
+                key: cleanKey,
+                value: String(value)
+            };
+        });
 
         setFormData({
             name: product.name,
@@ -392,10 +418,36 @@ export default function ProductPage() {
             meta_description: product.meta_description,
             meta_keywords: product.meta_keywords,
         });
-        // Set preview URLs
+
+        // Set preview URLs for existing media
         setPreviewThumbnail(product.thumbnail_url);
-        setPreviewMedia(product.media?.map(m => m.url) || []);
+        setPreviewMedia(product.media?.map(m => ({
+            url: m.url,
+            type: m.url.match(/\.(mp4|webm|ogg)$/i) ? 'video' : 'image'
+        })) || []);
+
+        // Clear any previously selected files
+        setThumbnail(null);
+        setMediaFiles([]);
+
+        if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
+        if (mediaInputRef.current) mediaInputRef.current.value = '';
+
         setShowModal(true);
+    };
+
+    const validateSpecificationsAndRequirements = () => {
+        const specs = formData.specifications.filter(spec => spec.key && spec.value);
+        const reqs = formData.requirements.filter(req => req.key && req.value);
+
+        // Remove empty entries
+        setFormData(prev => ({
+            ...prev,
+            specifications: specs,
+            requirements: reqs
+        }));
+
+        return true;
     };
 
     const columns: ColumnDef<Product>[] = [
@@ -726,12 +778,21 @@ export default function ProductPage() {
                                                     {selectedProduct.media.map((media, index) => (
                                                         <div key={media.id} className="col-md-3 col-sm-4 col-6">
                                                             <div className="position-relative">
-                                                                <img
-                                                                    src={media.url.startsWith('http') ? media.url : getMediaUrl(media.url)}
-                                                                    alt={`Media ${index + 1}`}
-                                                                    className="img-fluid rounded"
-                                                                    style={{ width: '100%', height: '150px', objectFit: 'cover' }}
-                                                                />
+                                                                {media.url.match(/\.(mp4|webm|ogg)$/i) ? (
+                                                                    <video
+                                                                        src={media.url.startsWith('http') ? media.url : getMediaUrl(media.url)}
+                                                                        className="img-fluid rounded"
+                                                                        style={{ width: '100%', height: '150px', objectFit: 'cover' }}
+                                                                        controls
+                                                                    />
+                                                                ) : (
+                                                                    <img
+                                                                        src={media.url.startsWith('http') ? media.url : getMediaUrl(media.url)}
+                                                                        alt={`Media ${index + 1}`}
+                                                                        className="img-fluid rounded"
+                                                                        style={{ width: '100%', height: '150px', objectFit: 'cover' }}
+                                                                    />
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ))}
@@ -1146,16 +1207,27 @@ export default function ProductPage() {
                         </Form.Group>
                         {previewMedia.length > 0 && (
                             <div className="d-flex flex-wrap gap-2 mt-2">
-                                {previewMedia.map((url, index) => (
+                                {previewMedia.map((media, index) => (
                                     <div key={index} className="position-relative">
-                                        <img
-                                            src={editingProduct && !url.startsWith('data:')
-                                                ? getMediaUrl(url)
-                                                : url}
-                                            alt={`Media ${index + 1}`}
-                                            style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-                                            className="rounded"
-                                        />
+                                        {media.type === 'video' ? (
+                                            <video
+                                                src={editingProduct && !media.url.startsWith('data:')
+                                                    ? getMediaUrl(media.url)
+                                                    : media.url}
+                                                style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                                className="rounded"
+                                                controls
+                                            />
+                                        ) : (
+                                            <img
+                                                src={editingProduct && !media.url.startsWith('data:')
+                                                    ? getMediaUrl(media.url)
+                                                    : media.url}
+                                                alt={`Media ${index + 1}`}
+                                                style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                                className="rounded"
+                                            />
+                                        )}
                                         <Button
                                             variant="danger"
                                             size="sm"
