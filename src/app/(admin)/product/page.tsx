@@ -21,6 +21,15 @@ interface Media {
     sort_order: number;
 }
 
+interface ProductEmbed {
+    id: number;
+    product_id: number;
+    embed_url: string;
+    sort_order: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
 interface Specification {
     key: string;
     value: string;
@@ -42,8 +51,25 @@ interface Product {
     meta_description: string;
     meta_keywords: string;
     author_id: number;
+    created_at: string;
+    updated_at: string;
+    createdAt: string;
+    updatedAt: string;
+    authorId: number;
+    User: {
+        id: number;
+        username: string;
+        firstname: string;
+        lastname: string;
+        profile: string | null;
+        email: string;
+        role: string;
+        createdAt: string;
+        updatedAt: string;
+    };
     category?: Category;
     media?: Media[];
+    embeds?: ProductEmbed[];
 }
 
 interface FormData {
@@ -58,8 +84,41 @@ interface FormData {
     meta_title: string;
     meta_description: string;
     meta_keywords: string;
+    embeds: string[];
 }
 
+// Add YouTube URL conversion function
+const convertToEmbedUrl = (url: string): string => {
+    if (!url) return url;
+
+    // Remove any trailing spaces
+    url = url.trim();
+
+    // YouTube video
+    if (url.includes('youtube.com/watch')) {
+        const videoId = url.match(/[?&]v=([^&]+)/)?.[1];
+        if (videoId) {
+            return `https://www.youtube.com/embed/${videoId}`;
+        }
+    }
+    // YouTube short URL
+    else if (url.includes('youtu.be/')) {
+        const videoId = url.split('youtu.be/')[1];
+        if (videoId) {
+            return `https://www.youtube.com/embed/${videoId}`;
+        }
+    }
+    // YouTube Shorts
+    else if (url.includes('youtube.com/shorts/')) {
+        const videoId = url.split('youtube.com/shorts/')[1].split('?')[0];
+        if (videoId) {
+            return `https://www.youtube.com/embed/${videoId}`;
+        }
+    }
+
+    // If already in embed format or unrecognized format, return as is
+    return url;
+};
 
 export default function ProductPage() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -81,6 +140,7 @@ export default function ProductPage() {
         meta_title: '',
         meta_description: '',
         meta_keywords: '',
+        embeds: [],
     });
     const [error, setError] = useState<string | null>(null);
     const [thumbnail, setThumbnail] = useState<File | null>(null);
@@ -204,7 +264,8 @@ export default function ProductPage() {
                 status: formData.status,
                 meta_title: formData.meta_title,
                 meta_description: formData.meta_description,
-                meta_keywords: formData.meta_keywords
+                meta_keywords: formData.meta_keywords,
+                embeds: formData.embeds.filter(url => url && url.trim() !== '')
             };
 
             const formDataToSend = new FormData();
@@ -245,7 +306,7 @@ export default function ProductPage() {
         setLoading(true);
 
         try {
-            // Convert all specifications and requirements in the form to objects
+            // Convert specifications and requirements arrays to objects
             const specificationsObj = formData.specifications.reduce((acc, spec) => {
                 if (spec.key && spec.value) {
                     acc[spec.key] = spec.value;
@@ -260,9 +321,6 @@ export default function ProductPage() {
                 return acc;
             }, {} as Record<string, string>);
 
-            console.log('Form specifications:', formData.specifications);
-            console.log('Converted specifications:', specificationsObj);
-
             const productData = {
                 name: formData.name,
                 category_id: parseInt(formData.category_id),
@@ -274,7 +332,8 @@ export default function ProductPage() {
                 status: formData.status,
                 meta_title: formData.meta_title,
                 meta_description: formData.meta_description,
-                meta_keywords: formData.meta_keywords
+                meta_keywords: formData.meta_keywords,
+                embeds: formData.embeds.filter(url => url && url.trim() !== '')
             };
 
             const formDataToSend = new FormData();
@@ -320,6 +379,7 @@ export default function ProductPage() {
             meta_title: '',
             meta_description: '',
             meta_keywords: '',
+            embeds: [],
         });
         setThumbnail(null);
         setMediaFiles([]);
@@ -376,8 +436,7 @@ export default function ProductPage() {
             value: String(value)
         }));
 
-        console.log('Editing product specs:', specsObj);
-        console.log('Converted to array:', specsArray);
+        console.log('Product embeds:', product.embeds); // Debug log
 
         setFormData({
             name: product.name,
@@ -391,6 +450,7 @@ export default function ProductPage() {
             meta_title: product.meta_title,
             meta_description: product.meta_description,
             meta_keywords: product.meta_keywords,
+            embeds: product.embeds?.map(e => e.embed_url) || [],
         });
         // Set preview URLs
         setPreviewThumbnail(product.thumbnail_url);
@@ -754,6 +814,46 @@ export default function ProductPage() {
                                 </div>
                             )}
 
+                            {/* Embed Links */}
+                            {selectedProduct.embeds && selectedProduct.embeds.length > 0 && (
+                                <div className="row mb-4">
+                                    <div className="col-12">
+                                        <div className="card">
+                                            <div className="card-header">
+                                                <h5 className="mb-0">Embed Links</h5>
+                                            </div>
+                                            <div className="card-body">
+                                                <div className="row g-3">
+                                                    {selectedProduct.embeds.map((embed) => {
+                                                        // Add parameters to YouTube URLs
+                                                        const embedUrl = embed.embed_url.includes('youtube.com')
+                                                            ? `${embed.embed_url}?rel=0&modestbranding=1&playsinline=1&enablejsapi=0&origin=${window.location.origin}&widget_referrer=${window.location.origin}&allow=accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share`
+                                                            : embed.embed_url;
+
+                                                        return (
+                                                            <div key={embed.id} className="col-md-6">
+                                                                <div className="ratio ratio-16x9">
+                                                                    <iframe
+                                                                        src={embedUrl}
+                                                                        title={`Embed ${embed.id}`}
+                                                                        allowFullScreen
+                                                                        className="rounded"
+                                                                        loading="lazy"
+                                                                        referrerPolicy="no-referrer"
+                                                                        sandbox="allow-same-origin allow-scripts allow-popups allow-presentation"
+                                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                                    ></iframe>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Specifications */}
                             {selectedProduct && selectedProduct.specifications && (
                                 <div className="row mb-4">
@@ -1078,6 +1178,84 @@ export default function ProductPage() {
                                         }}
                                     >
                                         Add Requirement
+                                    </Button>
+                                </div>
+                            </Col>
+                        </Row>
+
+                        <Row>
+                            <Col md={12}>
+                                <h5>Embed Links</h5>
+                            </Col>
+                            <Col md={12}>
+                                <div className="mb-3">
+                                    {formData.embeds.map((embed, index) => (
+                                        <div key={index} className="row mb-4">
+                                            <div className="col-md-10">
+                                                <Form.Control
+                                                    type="text"
+                                                    placeholder="Embed URL (e.g., YouTube, Vimeo, etc.)"
+                                                    value={embed}
+                                                    onChange={(e) => {
+                                                        const newEmbeds = [...formData.embeds];
+                                                        newEmbeds[index] = convertToEmbedUrl(e.target.value);
+                                                        setFormData({ ...formData, embeds: newEmbeds });
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="col-md-2">
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        const newEmbeds = formData.embeds.filter((_, i) => i !== index);
+                                                        setFormData({ ...formData, embeds: newEmbeds });
+                                                    }}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            </div>
+                                            {embed && (
+                                                <div className="col-12 mt-3">
+                                                    <div className="card">
+                                                        <div className="card-header">
+                                                            <h6 className="mb-0">Preview</h6>
+                                                        </div>
+                                                        <div className="card-body">
+                                                            <div className="ratio ratio-16x9">
+                                                                <iframe
+                                                                    src={embed.includes('youtube.com')
+                                                                        ? `${embed}?rel=0&modestbranding=1&playsinline=1&enablejsapi=0&origin=${window.location.origin}&widget_referrer=${window.location.origin}&allow=accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share`
+                                                                        : embed}
+                                                                    title={`Preview ${index + 1}`}
+                                                                    allowFullScreen
+                                                                    className="rounded"
+                                                                    loading="lazy"
+                                                                    referrerPolicy="no-referrer"
+                                                                    sandbox="allow-same-origin allow-scripts allow-popups allow-presentation"
+                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                                ></iframe>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <Button
+                                        variant="outline-primary"
+                                        size="sm"
+                                        onClick={() => {
+                                            setFormData({
+                                                ...formData,
+                                                embeds: [
+                                                    ...formData.embeds,
+                                                    ''
+                                                ],
+                                            });
+                                        }}
+                                    >
+                                        Add Embed Link
                                     </Button>
                                 </div>
                             </Col>
