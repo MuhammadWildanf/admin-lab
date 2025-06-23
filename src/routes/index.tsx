@@ -6,13 +6,13 @@ const Analytics = lazy(() => import('@/app/(admin)/dashboard/analytics/page'))
 
 // Add Category Route
 const Category = lazy(() => import('@/app/(admin)/category/page'))
+const SubCategory = lazy(() => import('@/app/(admin)/sub-category/page'))
 // Add Product Route
 const Product = lazy(() => import('@/app/(admin)/product/page'))
 
 // Pages Routes
 const ComingSoon = lazy(() => import('@/app/(other)/coming-soon/page'))
 const Maintenance = lazy(() => import('@/app/(other)/maintenance/page'))
-
 
 // Not Found Routes
 const NotFound = lazy(() => import('@/app/(other)/(error-pages)/error-404/page'))
@@ -42,6 +42,11 @@ const generalRoutes: RoutesProps[] = [
     element: <Analytics />,
   },
   {
+    path: '/sub-category',
+    name: 'Sub Category',
+    element: <SubCategory />,
+  },
+  {
     path: '/category',
     name: 'Category',
     element: <Category />,
@@ -52,8 +57,6 @@ const generalRoutes: RoutesProps[] = [
     element: <Product />,
   },
 ]
-
-
 
 export const authRoutes: RoutesProps[] = [
   {

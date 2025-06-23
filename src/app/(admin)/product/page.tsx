@@ -35,6 +35,15 @@ interface Specification {
     value: string;
 }
 
+interface SubCategory {
+    id: number;
+    name: string;
+    slug: string;
+    description: string;
+    category_id: number;
+    category: Category;
+}
+
 interface Product {
     id: number;
     name: string;
@@ -70,11 +79,14 @@ interface Product {
     category?: Category;
     media?: Media[];
     embeds?: ProductEmbed[];
+    sub_category_id?: number;
+    sub_category?: SubCategory;
 }
 
 interface FormData {
     name: string;
     category_id: string;
+    sub_category_id: string;
     description: string;
     specifications: Specification[];
     requirements: Specification[];
@@ -123,6 +135,7 @@ const convertToEmbedUrl = (url: string): string => {
 export default function ProductPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -131,6 +144,7 @@ export default function ProductPage() {
     const [formData, setFormData] = useState<FormData>({
         name: '',
         category_id: '',
+        sub_category_id: '',
         description: '',
         specifications: [],
         requirements: [],
@@ -186,9 +200,20 @@ export default function ProductPage() {
         }
     };
 
+    const fetchSubCategories = async () => {
+        try {
+            const response = await httpClient.get(getApiUrl('/sub-category'));
+            setSubCategories(response.data);
+        } catch (error) {
+            console.error('Failed to fetch sub-categories:', error);
+            setError(error instanceof Error ? error.message : 'Failed to fetch sub-categories');
+        }
+    };
+
     useEffect(() => {
         fetchProducts();
         fetchCategories();
+        fetchSubCategories();
     }, [search, selectedCategory, selectedStatus, selectedFeatured]);
 
     const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -265,7 +290,8 @@ export default function ProductPage() {
                 meta_title: formData.meta_title,
                 meta_description: formData.meta_description,
                 meta_keywords: formData.meta_keywords,
-                embeds: formData.embeds.filter(url => url && url.trim() !== '')
+                embeds: formData.embeds.filter(url => url && url.trim() !== ''),
+                sub_category_id: formData.sub_category_id ? parseInt(formData.sub_category_id) : null,
             };
 
             const formDataToSend = new FormData();
@@ -333,7 +359,8 @@ export default function ProductPage() {
                 meta_title: formData.meta_title,
                 meta_description: formData.meta_description,
                 meta_keywords: formData.meta_keywords,
-                embeds: formData.embeds.filter(url => url && url.trim() !== '')
+                embeds: formData.embeds.filter(url => url && url.trim() !== ''),
+                sub_category_id: formData.sub_category_id ? parseInt(formData.sub_category_id) : null,
             };
 
             const formDataToSend = new FormData();
@@ -370,6 +397,7 @@ export default function ProductPage() {
         setFormData({
             name: '',
             category_id: '',
+            sub_category_id: '',
             description: '',
             specifications: [],
             requirements: [],
@@ -451,6 +479,7 @@ export default function ProductPage() {
             meta_description: product.meta_description,
             meta_keywords: product.meta_keywords,
             embeds: product.embeds?.map(e => e.embed_url) || [],
+            sub_category_id: product.sub_category_id ? String(product.sub_category_id) : '',
         });
         // Set preview URLs
         setPreviewThumbnail(product.thumbnail_url);
@@ -466,6 +495,11 @@ export default function ProductPage() {
         {
             accessorKey: 'category.name',
             header: 'Category',
+        },
+        {
+            accessorKey: 'sub_category.name',
+            header: 'Sub Category',
+            cell: ({ row }) => row.original.sub_category?.name || '-',
         },
         {
             accessorKey: 'price',
@@ -672,14 +706,31 @@ export default function ProductPage() {
                             <div className="row mb-4">
                                 <div className="col-12">
                                     <div className="text-center">
-                                        <img
-                                            src={selectedProduct.thumbnail_url.startsWith('http')
-                                                ? selectedProduct.thumbnail_url
-                                                : getMediaUrl(selectedProduct.thumbnail_url)}
-                                            alt={selectedProduct.name}
-                                            className="img-fluid rounded"
-                                            style={{ maxHeight: '300px', objectFit: 'contain' }}
-                                        />
+                                        {(() => {
+                                            const isVideo = selectedProduct.thumbnail_url.match(/\.(mp4|webm|ogg)$/i);
+                                            if (isVideo) {
+                                                return (
+                                                    <video
+                                                        src={selectedProduct.thumbnail_url.startsWith('http')
+                                                            ? selectedProduct.thumbnail_url
+                                                            : getMediaUrl(selectedProduct.thumbnail_url)}
+                                                        className="img-fluid rounded"
+                                                        style={{ maxHeight: '300px', objectFit: 'contain' }}
+                                                        controls
+                                                    />
+                                                );
+                                            }
+                                            return (
+                                                <img
+                                                    src={selectedProduct.thumbnail_url.startsWith('http')
+                                                        ? selectedProduct.thumbnail_url
+                                                        : getMediaUrl(selectedProduct.thumbnail_url)}
+                                                    alt={selectedProduct.name}
+                                                    className="img-fluid rounded"
+                                                    style={{ maxHeight: '300px', objectFit: 'contain' }}
+                                                />
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>
@@ -701,6 +752,10 @@ export default function ProductPage() {
                                                     <tr>
                                                         <th>Category</th>
                                                         <td>{selectedProduct.category?.name || 'N/A'}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Sub Category</th>
+                                                        <td>{selectedProduct.sub_category?.name || 'N/A'}</td>
                                                     </tr>
                                                     <tr>
                                                         <th>Price</th>
@@ -1002,7 +1057,9 @@ export default function ProductPage() {
                                     <Form.Label>Category</Form.Label>
                                     <Form.Select
                                         value={formData.category_id}
-                                        onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, category_id: e.target.value, sub_category_id: '' });
+                                        }}
                                         required
                                     >
                                         <option value="">Select Category</option>
@@ -1019,6 +1076,26 @@ export default function ProductPage() {
                         <Row>
                             <Col md={6}>
                                 <Form.Group className="mb-3">
+                                    <Form.Label>Sub Category</Form.Label>
+                                    <Form.Select
+                                        value={formData.sub_category_id}
+                                        onChange={(e) => setFormData({ ...formData, sub_category_id: e.target.value })}
+                                        required
+                                        disabled={!formData.category_id}
+                                    >
+                                        <option value="">Select Sub Category</option>
+                                        {subCategories
+                                            .filter((sub) => String(sub.category_id) === formData.category_id)
+                                            .map((sub) => (
+                                                <option key={sub.id} value={sub.id}>
+                                                    {sub.name}
+                                                </option>
+                                            ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
                                     <Form.Label>Price</Form.Label>
                                     <Form.Control
                                         type="number"
@@ -1028,20 +1105,19 @@ export default function ProductPage() {
                                     />
                                 </Form.Group>
                             </Col>
-                            <Col md={6}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Status</Form.Label>
-                                    <Form.Select
-                                        value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                        required
-                                    >
-                                        <option value="draft">Draft</option>
-                                        <option value="published">Published</option>
-                                    </Form.Select>
-                                </Form.Group>
-                            </Col>
                         </Row>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Status</Form.Label>
+                            <Form.Select
+                                value={formData.status}
+                                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                required
+                            >
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                            </Form.Select>
+                        </Form.Group>
 
                         <Form.Group className="mb-3">
                             <Form.Label>Description</Form.Label>
@@ -1309,13 +1385,36 @@ export default function ProductPage() {
                             />
                             {previewThumbnail && (
                                 <div className="mt-2">
-                                    <img
-                                        src={editingProduct && !previewThumbnail.startsWith('data:')
-                                            ? getMediaUrl(previewThumbnail)
-                                            : previewThumbnail}
-                                        alt="Thumbnail preview"
-                                        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-                                    />
+                                    {(() => {
+                                        // Check if previewThumbnail is a video
+                                        const isVideo =
+                                            (typeof previewThumbnail === 'string' &&
+                                                (previewThumbnail.startsWith('data:video') ||
+                                                    previewThumbnail.match(/\.(mp4|webm|ogg)$/i) ||
+                                                    (editingProduct && previewThumbnail.match(/\.(mp4|webm|ogg)$/i))));
+                                        if (isVideo) {
+                                            return (
+                                                <video
+                                                    src={editingProduct && !previewThumbnail.startsWith('data:')
+                                                        ? getMediaUrl(previewThumbnail)
+                                                        : previewThumbnail}
+                                                    style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                                    controls
+                                                    className="rounded"
+                                                />
+                                            );
+                                        }
+                                        return (
+                                            <img
+                                                src={editingProduct && !previewThumbnail.startsWith('data:')
+                                                    ? getMediaUrl(previewThumbnail)
+                                                    : previewThumbnail}
+                                                alt="Thumbnail preview"
+                                                style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                                                className="rounded"
+                                            />
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </Form.Group>
@@ -1337,9 +1436,7 @@ export default function ProductPage() {
                         {previewMedia.length > 0 && (
                             <div className="d-flex flex-wrap gap-2 mt-2">
                                 {previewMedia.map((url, index) => {
-                                    const isVideo = url.startsWith('data:video') ||
-                                        (editingProduct && url.toLowerCase().match(/\.(mp4|webm|ogg)$/));
-
+                                    const isVideo = url.startsWith('data:video') || url.match(/\.(mp4|webm|ogg)$/i);
                                     return (
                                         <div key={index} className="position-relative">
                                             {isVideo ? (

@@ -17,6 +17,12 @@ export const MENU_ITEMS: MenuItemType[] = [
     url: '/dashboard/analytics',
   },
   {
+    key: 'sub-category',
+    icon: 'solar:tag-broken',
+    label: 'Sub Category',
+    url: '/sub-category',
+  },
+  {
     key: 'category',
     icon: 'solar:tag-broken',
     label: 'Category',
