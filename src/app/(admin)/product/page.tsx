@@ -79,14 +79,14 @@ interface Product {
     category?: Category;
     media?: Media[];
     embeds?: ProductEmbed[];
-    sub_category_id?: number;
-    sub_category?: SubCategory;
+    subcategory_id?: number | null;
+    subcategory?: SubCategory | null;
 }
 
 interface FormData {
     name: string;
     category_id: string;
-    sub_category_id: string;
+    subcategory_id: string;
     description: string;
     specifications: Specification[];
     requirements: Specification[];
@@ -144,7 +144,7 @@ export default function ProductPage() {
     const [formData, setFormData] = useState<FormData>({
         name: '',
         category_id: '',
-        sub_category_id: '',
+        subcategory_id: '',
         description: '',
         specifications: [],
         requirements: [],
@@ -291,7 +291,7 @@ export default function ProductPage() {
                 meta_description: formData.meta_description,
                 meta_keywords: formData.meta_keywords,
                 embeds: formData.embeds.filter(url => url && url.trim() !== ''),
-                sub_category_id: formData.sub_category_id ? parseInt(formData.sub_category_id) : null,
+                subcategory_id: formData.subcategory_id ? parseInt(formData.subcategory_id) : null,
             };
 
             const formDataToSend = new FormData();
@@ -360,7 +360,7 @@ export default function ProductPage() {
                 meta_description: formData.meta_description,
                 meta_keywords: formData.meta_keywords,
                 embeds: formData.embeds.filter(url => url && url.trim() !== ''),
-                sub_category_id: formData.sub_category_id ? parseInt(formData.sub_category_id) : null,
+                subcategory_id: formData.subcategory_id ? parseInt(formData.subcategory_id) : null,
             };
 
             const formDataToSend = new FormData();
@@ -397,7 +397,7 @@ export default function ProductPage() {
         setFormData({
             name: '',
             category_id: '',
-            sub_category_id: '',
+            subcategory_id: '',
             description: '',
             specifications: [],
             requirements: [],
@@ -435,40 +435,23 @@ export default function ProductPage() {
         // Parse specifications and requirements if they are strings
         let specsObj = product.specifications;
         let reqsObj = product.requirements;
-
-        // If specifications is a string, try to parse it
         if (typeof product.specifications === 'string') {
-            try {
-                specsObj = JSON.parse(product.specifications);
-            } catch (e) {
-                specsObj = {};
-            }
+            try { specsObj = JSON.parse(product.specifications); } catch (e) { specsObj = {}; }
         }
-
-        // If requirements is a string, try to parse it
         if (typeof product.requirements === 'string') {
-            try {
-                reqsObj = JSON.parse(product.requirements);
-            } catch (e) {
-                reqsObj = {};
-            }
+            try { reqsObj = JSON.parse(product.requirements); } catch (e) { reqsObj = {}; }
         }
+        const specsArray = Object.entries(specsObj || {}).map(([key, value]) => ({ key, value: String(value) }));
+        const reqsArray = Object.entries(reqsObj || {}).map(([key, value]) => ({ key, value: String(value) }));
 
-        // Convert specifications and requirements objects to arrays
-        const specsArray = Object.entries(specsObj || {}).map(([key, value]) => ({
-            key,
-            value: String(value)
-        }));
-        const reqsArray = Object.entries(reqsObj || {}).map(([key, value]) => ({
-            key,
-            value: String(value)
-        }));
-
-        console.log('Product embeds:', product.embeds); // Debug log
-
+        // Cari sub-category yang sesuai
+        let subCat = null;
+        if (product.subcategory_id) {
+            subCat = subCategories.find(s => s.id === product.subcategory_id);
+        }
         setFormData({
             name: product.name,
-            category_id: product.category_id.toString(),
+            category_id: subCat ? String(subCat.category_id) : product.category_id.toString(),
             description: product.description,
             specifications: specsArray,
             requirements: reqsArray,
@@ -479,9 +462,8 @@ export default function ProductPage() {
             meta_description: product.meta_description,
             meta_keywords: product.meta_keywords,
             embeds: product.embeds?.map(e => e.embed_url) || [],
-            sub_category_id: product.sub_category_id ? String(product.sub_category_id) : '',
+            subcategory_id: product.subcategory_id ? String(product.subcategory_id) : '',
         });
-        // Set preview URLs
         setPreviewThumbnail(product.thumbnail_url);
         setPreviewMedia(product.media?.map(m => m.url) || []);
         setShowModal(true);
@@ -497,9 +479,9 @@ export default function ProductPage() {
             header: 'Category',
         },
         {
-            accessorKey: 'sub_category.name',
+            accessorKey: 'subcategory.name',
             header: 'Sub Category',
-            cell: ({ row }) => row.original.sub_category?.name || '-',
+            cell: ({ row }) => row.original.subcategory?.name || '-',
         },
         {
             accessorKey: 'price',
@@ -755,7 +737,7 @@ export default function ProductPage() {
                                                     </tr>
                                                     <tr>
                                                         <th>Sub Category</th>
-                                                        <td>{selectedProduct.sub_category?.name || 'N/A'}</td>
+                                                        <td>{selectedProduct.subcategory?.name || 'N/A'}</td>
                                                     </tr>
                                                     <tr>
                                                         <th>Price</th>
@@ -1058,7 +1040,7 @@ export default function ProductPage() {
                                     <Form.Select
                                         value={formData.category_id}
                                         onChange={(e) => {
-                                            setFormData({ ...formData, category_id: e.target.value, sub_category_id: '' });
+                                            setFormData({ ...formData, category_id: e.target.value, subcategory_id: '' });
                                         }}
                                         required
                                     >
@@ -1078,8 +1060,8 @@ export default function ProductPage() {
                                 <Form.Group className="mb-3">
                                     <Form.Label>Sub Category</Form.Label>
                                     <Form.Select
-                                        value={formData.sub_category_id}
-                                        onChange={(e) => setFormData({ ...formData, sub_category_id: e.target.value })}
+                                        value={formData.subcategory_id}
+                                        onChange={(e) => setFormData({ ...formData, subcategory_id: e.target.value })}
                                         required
                                         disabled={!formData.category_id}
                                     >
@@ -1087,10 +1069,17 @@ export default function ProductPage() {
                                         {subCategories
                                             .filter((sub) => String(sub.category_id) === formData.category_id)
                                             .map((sub) => (
-                                                <option key={sub.id} value={sub.id}>
+                                                <option key={sub.id} value={String(sub.id)}>
                                                     {sub.name}
                                                 </option>
                                             ))}
+                                        {formData.subcategory_id && !subCategories.some(sub => String(sub.id) === formData.subcategory_id && String(sub.category_id) === formData.category_id) && (() => {
+                                            const selectedSub = subCategories.find(sub => String(sub.id) === formData.subcategory_id);
+                                            if (selectedSub) {
+                                                return <option key={selectedSub.id} value={String(selectedSub.id)}>{selectedSub.name}</option>;
+                                            }
+                                            return null;
+                                        })()}
                                     </Form.Select>
                                 </Form.Group>
                             </Col>

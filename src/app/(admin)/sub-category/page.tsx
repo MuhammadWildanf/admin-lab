@@ -234,7 +234,11 @@ export default function SubCategoryPage() {
             ) : (
                 <ReactTable {...tableProps} />
             )}
-            <Modal show={showModal} onHide={() => setShowModal(false)}>
+            <Modal show={showModal} onHide={() => {
+                setShowModal(false);
+                setEditingSubCategory(null);
+                setFormData({ name: '', description: '', category_id: '' });
+            }}>
                 <Modal.Header closeButton>
                     <Modal.Title>{editingSubCategory ? 'Edit Sub Category' : 'Add Sub Category'}</Modal.Title>
                 </Modal.Header>
@@ -267,7 +271,7 @@ export default function SubCategoryPage() {
                             >
                                 <option value="">Select Category</option>
                                 {categories.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    <option key={cat.id} value={String(cat.id)}>{cat.name}</option>
                                 ))}
                             </Form.Select>
                         </Form.Group>
