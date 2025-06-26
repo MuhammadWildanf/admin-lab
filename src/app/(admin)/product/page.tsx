@@ -514,17 +514,6 @@ export default function ProductPage() {
             ),
         },
         {
-            accessorKey: 'thumbnail_url',
-            header: 'Thumbnail',
-            cell: ({ row }) => (
-                <img
-                    src={row.original.thumbnail_url.startsWith('http') ? row.original.thumbnail_url : getMediaUrl(row.original.thumbnail_url)}
-                    alt={row.original.name}
-                    style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-                />
-            ),
-        },
-        {
             id: 'actions',
             header: 'Actions',
             cell: ({ row }) => (
@@ -1096,6 +1085,15 @@ export default function ProductPage() {
                             </Col>
                         </Row>
 
+                        <Form.Group className="mb-3" controlId="isFeaturedCheckbox">
+                            <Form.Check
+                                type="checkbox"
+                                label="Featured Product"
+                                checked={formData.is_featured}
+                                onChange={e => setFormData({ ...formData, is_featured: e.target.checked })}
+                            />
+                        </Form.Group>
+
                         <Form.Group className="mb-3">
                             <Form.Label>Status</Form.Label>
                             <Form.Select
@@ -1117,6 +1115,8 @@ export default function ProductPage() {
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             />
                         </Form.Group>
+
+
 
                         <Row>
                             <Col md={12}>
@@ -1426,22 +1426,22 @@ export default function ProductPage() {
                             <div className="d-flex flex-wrap gap-2 mt-2">
                                 {previewMedia.map((url, index) => {
                                     const isVideo = url.startsWith('data:video') || url.match(/\.(mp4|webm|ogg)$/i);
+                                    const src =
+                                        editingProduct && !url.startsWith('data:')
+                                            ? (url.startsWith('http') ? url : getMediaUrl(url))
+                                            : url;
                                     return (
                                         <div key={index} className="position-relative">
                                             {isVideo ? (
                                                 <video
-                                                    src={editingProduct && !url.startsWith('data:')
-                                                        ? getMediaUrl(url)
-                                                        : url}
+                                                    src={src}
                                                     style={{ width: '100px', height: '100px', objectFit: 'cover' }}
                                                     className="rounded"
                                                     controls
                                                 />
                                             ) : (
                                                 <img
-                                                    src={editingProduct && !url.startsWith('data:')
-                                                        ? getMediaUrl(url)
-                                                        : url}
+                                                    src={src}
                                                     alt={`Media ${index + 1}`}
                                                     style={{ width: '100px', height: '100px', objectFit: 'cover' }}
                                                     className="rounded"
@@ -1460,6 +1460,8 @@ export default function ProductPage() {
                                 })}
                             </div>
                         )}
+
+
                     </Modal.Body>
                     <Modal.Footer>
                         <Button variant="secondary" onClick={() => {
